@@ -1,21 +1,4 @@
-#include <Servo.h>
-
-Servo ser;
-
-int pin = 9;
-int starting_pos = 0;
-
-void move_servo(Sevo servo, int starting_pos, int direction, int stop, int speed);
-
-void setup() {
-  ser.attach(pin);
-  ser.write(starting_pos);
-}
-
-void loop() {
-  // example 
-  move_servo(ser, 180, 0, 35, 10);
-}
+#include "move_servo.h"
 
 /**
 move_servo is a function to control the speed of a servo
