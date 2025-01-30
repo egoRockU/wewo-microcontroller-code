@@ -5,7 +5,7 @@
 #define CM_TO_INCH 0.393701
 
 int BottleCount = 0;
-int litersRecieve = 0;
+int litersReceive = 0;
 bool idle = true;
 bool dec_open = false;
 
@@ -26,15 +26,6 @@ float distanceCm;
 // button
 const int btn_start = 18;
 int btn_start_state = 1;
-
-// function initialization
-void checkInsertedObject();
-void printBottleCount();
-bool check_if_done();
-int identifySize();
-bool noSerialConnection();
-int sizeToLiters(int size);
-void move_servo(Servo servo, int starting_pos, int direction, int stop, int speed);
 
 //value
 String sizes[] = {"Large", "Medium", "Small"};
@@ -63,11 +54,6 @@ void setup() {
 }
 
 void loop() {
-  // lcd
-  lcd.setCursor(0, 0);
-  lcd.print("  Welcome to WEWO   ");
-  lcd.setCursor(0, 3);
-  lcd.print("Press once to start");
 
   // buttons
   btn_start_state = digitalRead(btn_start);
@@ -75,13 +61,21 @@ void loop() {
   if (btn_start_state == LOW) {
     idle = false;
     checkInsertedObject();
+    return;
   }
 
   delay(100);
 
   if (!idle) {
     checkInsertedObject();
+    return;
   }
+
+  // We put this below so that it wont run again while idle is true
+  lcd.setCursor(0, 0);
+  lcd.print("  Welcome to WEWO   ");
+  lcd.setCursor(0, 3);
+  lcd.print("Press once to start");
 
 }
 
@@ -89,13 +83,11 @@ void checkInsertedObject() {
   bool objectDetected = false;
   stopper.write(0);
   decision.write(180);
-  printBottleCount();
   delay(1000);
 
-  lcd.setCursor(0,0);
-  lcd.print("                    ");
   lcd.setCursor(0,3);
   lcd.print("Hold button if done.");
+  printLitersReceived();
 
   objectDetected = check_if_done();
   while (!objectDetected) {
@@ -118,94 +110,113 @@ void checkInsertedObject() {
     Serial.println(distanceCm);
 
     // Ultrasonic detection values
-    if (distanceCm < 10.0 && distanceCm != 0.0) {
+    if (distanceCm < 10.0 || distanceCm > 200 && distanceCm != 0.0) {
       BottleCount += 1;
 
       // this is where the object detection will occur
-      lcd.setCursor(0,2);
+      lcd.setCursor(0,0);
       lcd.print("Processing object...");
       int size = identifySize();
 
       // check for 3 and 4
       // '3' means not bottle, '4' means camera failure, and '5' means serial connection error
       if (size == 3 || size == 4) {
-        lcd.setCursor(0,0);
+        lcd.setCursor(0,2);
         lcd.print("                    ");
-        lcd.setCursor(0,0);
+        lcd.setCursor(0,2);
         lcd.print("Img Process Failed");
       } else if(size == 5) {
-        lcd.setCursor(0,0);
+        lcd.setCursor(0,2);
         lcd.print("                    ");
-        lcd.setCursor(0,0);
+        lcd.setCursor(0,2);
         lcd.print("Serial Con Error");
       } else {
-        lcd.setCursor(0,0);
+        lcd.setCursor(0,2);
         lcd.print("                    ");
-        lcd.setCursor(0,0);
+        lcd.setCursor(0,2);
         lcd.print(sizes[size]);
 
         int liters = sizeToLiters(size);
         if (liters != -1){
-          litersRecieve += liters;
+          litersReceive += liters;
         }
 
-        move_servo(decision, 180, 0, 35, 10);
-        decision.write(35);
+        // move decision servo slowly
+        for (int i = 180; i > 35; i -= 1){
+          decision.write(i);
+          delay(10);
+        }
         dec_open = true;
       }
 
-      delay(5000);
+      delay(2000);
       
+      // clear size display on lcd
       lcd.setCursor(0,2);
       lcd.print("                    ");
 
-      // open/close stopper
-      move_servo(stopper, 0, 1, 90, 10);
-      stopper.write(90);
-      delay(5000);
-      move_servo(stopper, 90, 0, 0, 10);
-      stopper.write(0);
+      // open/close stopper servo
+      for (int i = 0; i < 90; i += 1){
+        stopper.write(i);
+        delay(10);
+      }
+
       delay(2000);
 
+      for (int i = 90; i > 0; i -= 1){
+        stopper.write(i);
+        delay(10);
+      }
+      delay(2000);
+
+      // check if decision servo is open. if it does, close it
       if(dec_open){
-        move_servo(decision, 35, 1, 180, 10);
-        decision.write(180);
+        for (int i = 35; i < 180; i += 1){
+          decision.write(i);
+          delay(10);
+        }
         dec_open = false;
         delay(2000);
       }
 
-      printBottleCount();
-      gate.write(180);
+      //printBottleCount();
+      printLitersReceived();
       objectDetected = true;
     }
   }
 }
 
-void printBottleCount() {
+
+void printLitersReceived() {
+    lcd.setCursor(0,0);
+    lcd.print("Please Insert Bottle");
     lcd.setCursor(0, 1);
-    lcd.print("Bottle count: ");
+    lcd.print("Total liters: ");
     lcd.setCursor(14, 1);
-    lcd.print(BottleCount);
+    lcd.print(litersReceive);
 }
+
 
 bool check_if_done() {
   btn_start_state = digitalRead(btn_start);
   if (btn_start_state == LOW) {
-    Serial.println("TOTAL LITERS:" + String(litersRecieve));
-    gate.write(0);
-    printBottleCount();
+    Serial.println("TOTAL LITERS:" + String(litersReceive)); // send message to rpi, rpi will send to arduino to open water pumper
+    printLitersReceived();
     idle = true;
-    lcd.setCursor(0,2);
+    // clear LCD
+    lcd.setCursor(0,0);
     lcd.print("                    ");
-    lcd.setCursor(0,2);
+    lcd.setCursor(0,0);
     lcd.print("Thank you");
+    lcd.setCursor(0,3);
+    lcd.print("                    ");
     delay(2000);
     lcd.setCursor(0,1);
     lcd.print("                    ");
     lcd.setCursor(0,2);
     lcd.print("                    ");
 
-    BottleCount = 0;
+    litersReceive = 0;
     return true;
   }
   return false;
@@ -256,38 +267,9 @@ int sizeToLiters(int size){
       return 3;
     case 1:
       return 2;
-    case 3:
+    case 2:
       return 1;
     default:
       return -1;
   }
-}
-
-void move_servo(Servo servo, int starting_pos, int direction, int stop, int speed){
-
-  if (direction == 0){
-
-    if (stop >= starting_pos){
-      return;
-    }
-
-    for (int i = starting_pos; i >= stop; i -= 1){
-      servo.write(i);
-      delay(speed);
-    }
-    return;
-
-  } else if (direction == 1) {
-    
-    if (stop <= starting_pos){
-      return;
-    }
-
-    for (int i = starting_pos; i <= stop; i += 1){
-      servo.write(i);
-      delay(speed);
-    }
-    return;
-
-  } 
 }
