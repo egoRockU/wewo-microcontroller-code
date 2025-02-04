@@ -58,6 +58,13 @@ void loop() {
   // buttons
   btn_start_state = digitalRead(btn_start);
 
+  if (idle){
+    lcd.setCursor(0, 0);
+    lcd.print("  Welcome to WEWO   ");
+    lcd.setCursor(0, 3);
+    lcd.print("Press once to start");
+  }
+
   if (btn_start_state == LOW) {
     idle = false;
     checkInsertedObject();
@@ -72,10 +79,10 @@ void loop() {
   }
 
   // We put this below so that it wont run again while idle is true
-  lcd.setCursor(0, 0);
-  lcd.print("  Welcome to WEWO   ");
-  lcd.setCursor(0, 3);
-  lcd.print("Press once to start");
+  // lcd.setCursor(0, 0);
+  // lcd.print("  Welcome to WEWO   ");
+  // lcd.setCursor(0, 3);
+  // lcd.print("Press once to start");
 
 }
 
@@ -83,7 +90,7 @@ void checkInsertedObject() {
   bool objectDetected = false;
   stopper.write(0);
   decision.write(180);
-  delay(1000);
+  delay(100);
 
   lcd.setCursor(0,3);
   lcd.print("Hold button if done.");
@@ -105,7 +112,7 @@ void checkInsertedObject() {
     duration = pulseIn(echoPin, HIGH);
     distanceCm = duration * SOUND_SPEED/2;
 
-    delay(1000);
+    delay(300);
 
     Serial.println(distanceCm);
 
@@ -149,7 +156,7 @@ void checkInsertedObject() {
         dec_open = true;
       }
 
-      delay(2000);
+      delay(100);
       
       // clear size display on lcd
       lcd.setCursor(0,2);
@@ -161,13 +168,13 @@ void checkInsertedObject() {
         delay(10);
       }
 
-      delay(2000);
+      delay(100);
 
       for (int i = 90; i > 0; i -= 1){
         stopper.write(i);
         delay(10);
       }
-      delay(2000);
+      delay(100);
 
       // check if decision servo is open. if it does, close it
       if(dec_open){
@@ -176,7 +183,7 @@ void checkInsertedObject() {
           delay(10);
         }
         dec_open = false;
-        delay(2000);
+        delay(100);
       }
 
       //printBottleCount();
