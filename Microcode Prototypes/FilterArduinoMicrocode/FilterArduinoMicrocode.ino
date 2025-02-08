@@ -1,10 +1,16 @@
 
 // pins
 int t1pump = 3, t2bpump = 4, t2apump = 5, rPump = 9;
-int level1 = 10, level2 = 11;
+int level1 = 10, level2 = 11, tank1_lvl = 12;
 
 // pump delays
 int tank2pumpDelay = 1000;
+
+// StartTime
+unsigned long t1pumpStartTime = 0;
+
+// States
+bool t1open = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -14,12 +20,16 @@ void setup() {
   pinMode(rPump, OUTPUT);
   pinMode(level1, INPUT);
   pinMode(level2, INPUT);
+  pinMode(tank1_lvl, INPUT);
   Serial.begin(115200);
 }
 
 void loop() {
   // listen to serial connection
   while(Serial.available() == 0){
+
+    check_tank1();
+
     String response = Serial.readStringUntil('\n');
     Serial.println(response);
     if (response) {
@@ -36,7 +46,7 @@ void loop() {
         value.toLowerCase();
 
         if (value == "open tank 1"){
-          open_t1pump(5000);
+          open_t1pump();
         }
         else if (value == "check water quality"){
           check_water_quality();
@@ -51,6 +61,9 @@ void loop() {
         }
       }
     }
+
+    // update states
+    update_t1pump(5000);
   }
 }
 
@@ -76,10 +89,24 @@ void check_water_quality(){
   }
 }
 
-void open_t1pump(int duration){
+void check_tank1(){
+  int tank1_full = digitalRead(tank1_lvl);
+  if (tank1_full) {
+    open_t1pump();
+  }
+}
+
+void open_t1pump(){
   digitalWrite(t1pump, HIGH);
-  delay(duration);
-  digitalWrite(t1pump, LOW);
+  t1pumpStartTime = millis();
+  t1open = true;
+}
+
+void update_t1pump(int duration) {
+  if (t1open && millis() - t1pumpStartTime >= duration) {
+    digitalWrite(t1pump, LOW);
+    t1open = false;
+  }
 }
 
 void open_t2bpump(int duration){
@@ -105,8 +132,6 @@ void check_water_level(){
   int full = digitalRead(level1);
   int empty = digitalRead(level2);
 
-  Serial.println(full);
-  Serial.println(empty);
   if (full){
     Serial.println("Tank 3 is full!");
   } else if (empty) {
@@ -115,8 +140,3 @@ void check_water_level(){
     Serial.println("Tank 3 is neither Full nor Empty");
   }
 }
-
-
-
-
-
