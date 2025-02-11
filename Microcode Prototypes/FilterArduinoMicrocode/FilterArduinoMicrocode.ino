@@ -83,13 +83,11 @@ void check_water_quality(){
 
   if (turbidity > 30){
     // TODO: Send response for the admin to save the turbidity value
-    Serial.println("Water Quality Failed");
-    Serial.print("Turbidity: ");
+    Serial.print("Water Quality Failed! | Turbidity: ");
     Serial.println(turbidity);
     open_pump(t2bpump, &t2bpumpST, &t2bopen);
   } else {
-    Serial.println("Water Quality Passed");
-    Serial.print("Turbidity: ");
+    Serial.print("Water Quality Passed! | Turbidity: ");
     Serial.println(turbidity);
     open_pump(t2apump, &t2apumpST, &t2aopen);
   }
@@ -126,10 +124,8 @@ void check_water_level(){
   int empty = digitalRead(t3Level);
 
   if (empty){
-    Serial.println("Tank 3 is empty!");
-    Serial.println("res: 1");
+    Serial.println("Tank 3 is empty! | res: 1");
   } else {
-    Serial.println("Tank 3 is not empty");
-    Serial.println("res: 0");
+    Serial.println("Tank 3 is NOT empty | res: 0");
   }
 }
