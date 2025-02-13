@@ -1,7 +1,7 @@
 
 // pins
 int t1pump = 3, t2bpump = 4, t2apump = 5, rPump = 9;
-int t3Level = 11, tank1_lvl = 12;
+int t3Level = 11, tank2_lvl = 12, tank1_lvl = 13;
 
 // pump delays
 int tank2pumpDelay = 1000;
@@ -29,7 +29,7 @@ void setup() {
   pinMode(rPump, OUTPUT);
   pinMode(t3Level, INPUT);
   pinMode(tank1_lvl, INPUT);
-  Serial.begin(115200);
+  Serial.begin(9600);
 }
 
 void loop() {
@@ -37,6 +37,7 @@ void loop() {
   while(Serial.available() == 0){
 
     check_tank1();
+    check_tank2();
 
     String response = Serial.readStringUntil('\n');
     if (response) {
@@ -97,6 +98,13 @@ void check_tank1(){
   int tank1_full = digitalRead(tank1_lvl);
   if (tank1_full) {
     open_pump(t1pump, &t1pumpST, &t1open);
+  }
+}
+
+void check_tank2(){
+  int tank2_full = digitalRead(tank2_lvl);
+  if (tank2_full){
+    check_water_quality();
   }
 }
 
