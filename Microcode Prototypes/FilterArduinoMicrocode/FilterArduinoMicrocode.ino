@@ -1,7 +1,7 @@
 
 // pins
-int t1pump = 3, t2bpump = 4, t2apump = 5, rPump = 9;
-int t3Level = 11, tank2_lvl = 12, tank1_lvl = 13;
+int t1pump = 3, t2bpump = 4, t2apump = 5, rPump = 8;
+int t3Level = 10, tank2_lvl = 26, tank1_lvl = 13;
 
 // pump delays
 int tank2pumpDelay = 1000;
@@ -27,8 +27,9 @@ void setup() {
   pinMode(t2bpump, OUTPUT);
   pinMode(t2apump, OUTPUT);
   pinMode(rPump, OUTPUT);
-  pinMode(t3Level, INPUT);
   pinMode(tank1_lvl, INPUT);
+  pinMode(tank2_lvl, INPUT);
+  pinMode(t3Level, INPUT);
   Serial.begin(9600);
 }
 
@@ -62,7 +63,7 @@ void loop() {
         else if (value == "CHECK WATER LEVEL"){
           check_water_level();
         }
-        else if (label == "res:" && isDigit(value[0])) {
+        else if (label == "provide res:" && isDigit(value[0])) {
           rPumpDuration = 0; //just to clear previous duration
           int response_val = value.toInt();
           open_rPump(response_val);
@@ -84,11 +85,11 @@ void check_water_quality(){
 
   if (turbidity > 30){
     // TODO: Send response for the admin to save the turbidity value
-    Serial.print("Water Quality Failed! | Turbidity: ");
+    Serial.print("Water Quality Status: Failed! | Turbidity: ");
     Serial.println(turbidity);
     open_pump(t2bpump, &t2bpumpST, &t2bopen);
   } else {
-    Serial.print("Water Quality Passed! | Turbidity: ");
+    Serial.print("Water Quality Status: Passed! | Turbidity: ");
     Serial.println(turbidity);
     open_pump(t2apump, &t2apumpST, &t2aopen);
   }
@@ -132,8 +133,8 @@ void check_water_level(){
   int empty = digitalRead(t3Level);
 
   if (empty){
-    Serial.println("Tank 3 is empty! | res: 1");
+    Serial.println("Tank 3 status: empty! | res: 1");
   } else {
-    Serial.println("Tank 3 is NOT empty | res: 0");
+    Serial.println("Tank 3 status: NOT empty | res: 0");
   }
 }

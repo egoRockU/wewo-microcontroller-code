@@ -66,7 +66,7 @@ void loop() {
     lcd.print("Press once to start");
   }
 
-  if (btn_start_state == LOW) {
+  if (btn_start_state == LOW && idle) {
     idle = false;
     lcd.setCursor(0, 3);
     lcd.print("                    ");
@@ -283,7 +283,7 @@ int identifySize() {
   while (Serial.available()==0){
     String response = Serial.readString();
     if (response){
-      // sample response: "res: 2\n"
+      // sample response: "class res: 2\n"
       // where value corresponds to index in array response = ["Large", "Meduim", "Small", "Not Bottle", "Camera Failed"]
       response.trim();
       int separatorIndex = response.indexOf(":");
@@ -294,8 +294,11 @@ int identifySize() {
         // Remove extra whitespace
         label.trim(); 
         value.trim();
-        response_val = value.toInt();
-        break;
+        label.toUpperCase();
+        if (label == "CLASS RES:"){
+          response_val = value.toInt();
+          break;
+        }
       }
     }
   }
@@ -315,13 +318,13 @@ void check_sizes_values() {
         int separatorIndex = response.indexOf(":");
         String label = response.substring(0, separatorIndex + 1);
         label.toUpperCase();
-        if (label == "RES:") {
+        if (label == "PUMPER VALUES RES:") {
           change_sizes_value(response);
-        } else if (label == "ERROR:") {
+          return;
+        } else if (label == "PUMPER VALUES ERROR:") {
           Serial.println("Error Changing Size values, using the default for now!");
+          return;
         }
-        
-        return;
       }
     }
   }
@@ -344,9 +347,9 @@ int is_tank3_empty() {
         // Remove extra whitespace
         label.trim(); 
         value.trim();
-        label.toLowerCase();
+        label.toUpperCase();
         int is_empty = value.toInt();
-        if (label == "res:") {
+        if (label == "TANK 3 LEVEL RES:") {
           return is_empty;
         }
       }
