@@ -5,7 +5,8 @@
 #define CM_TO_INCH 0.393701
 
 int BottleCount = 0;
-int litersReceive = 0;
+int pumperTime = 0;
+int totalML = 0;
 bool idle = true;
 bool dec_open = false;
 bool stopper_open = true;
@@ -30,6 +31,7 @@ int btn_start_state = 1;
 //value
 String sizes[] = {"Large", "Medium", "Small"};
 int sizes_value[] = {3, 2, 1};
+int ml[] = {15, 10, 5};
 
 void setup() {
   Serial.begin(115200);
@@ -80,19 +82,6 @@ void loop() {
       lcd.print("                    ");
       lcd.setCursor(0, 3);
       lcd.print("WEWO is empty!");
-      // // open/close stopper servo
-      // for (int i = 0; i < 90; i += 1){
-      //   stopper.write(i);
-      //   delay(10);
-      // }
-
-      // delay(100);
-
-      // for (int i = 90; i > 0; i -= 1){
-      //   stopper.write(i);
-      //   delay(10);
-      // }
-      // delay(100);
 
       delay(5000);
       return;
@@ -128,7 +117,8 @@ void checkInsertedObject() {
 
   lcd.setCursor(0,3);
   lcd.print("Hold button if done.");
-  printLitersReceived();
+  // printLitersReceived();
+  printTotalML();
 
   objectDetected = check_if_done();
   while (!objectDetected) {
@@ -177,9 +167,14 @@ void checkInsertedObject() {
         lcd.setCursor(0,2);
         lcd.print(sizes[size]);
 
-        int liters = sizeToLiters(size);
-        if (liters != -1){
-          litersReceive += liters;
+        int ptime = sizeToTime(size);
+        if (ptime != -1){
+          pumperTime += ptime;
+        }
+
+        int milliliters = sizeToTotalML();
+        if (milliliters != -1){
+          totalML += milliliters;
         }
 
         // move decision servo slowly
@@ -217,8 +212,8 @@ void checkInsertedObject() {
         delay(100);
       }
 
-      //printBottleCount();
-      printLitersReceived();
+      //printLitersReceived();
+      printTotalML();
       objectDetected = true;
     }
   }
@@ -236,12 +231,25 @@ void printLitersReceived() {
     lcd.print(litersReceive);
 }
 
+void printTotalML() {
+    lcd.setCursor(0,0);
+    lcd.print("Please Insert Bottle");
+    lcd.setCursor(0,2);
+    lcd.print("                    ");
+    lcd.setCursor(0, 1);
+    lcd.print("TOTAL (ml): ");
+    lcd.setCursor(14, 1);
+    lcd.print(totalML);
+}
+}
+
 
 bool check_if_done() {
   btn_start_state = digitalRead(btn_start);
   if (btn_start_state == LOW) {
-    Serial.println("TOTAL LITERS:" + String(litersReceive)); // send message to rpi, rpi will send to arduino to open water pumper
-    printLitersReceived();
+    Serial.println("TOTAL TIME:" + String(pumperTime) + " | TOTAL ML:" + String(totalML)); // send message to rpi, rpi will send to arduino to open water pumper
+    //printLitersReceived();
+    printTotalML();
     idle = true;
     // clear LCD
     lcd.setCursor(0,0);
@@ -265,7 +273,9 @@ bool check_if_done() {
     lcd.setCursor(0,2);
     lcd.print("                    ");
 
-    litersReceive = 0;
+    //litersReceive = 0;
+    pumperTime = 0
+    totalML = 0;
     return true;
   }
   return false;
@@ -365,7 +375,7 @@ bool noSerialConnection(){
   }
 }
 
-int sizeToLiters(int size){
+int sizeToTime(int size){
   switch (size) {
     case 0:
       return sizes_value[0];
@@ -378,14 +388,35 @@ int sizeToLiters(int size){
   }
 }
 
+int sizeToTotalML(int size) {
+  switch (size){
+    case 0:
+      return ml[0];
+    case 1:
+      return ml[1];
+    case 2:
+      return ml[2];
+    default:
+      return -1;
+  }
+}
+
 void change_sizes_value(String data) {
-    int largeValue = extractValue(data, "Large:");
-    int mediumValue = extractValue(data, "Medium:");
-    int smallValue = extractValue(data, "Small:");
+    int largeValue = extractValue(data, "LargeV:");
+    int mediumValue = extractValue(data, "MediumV:");
+    int smallValue = extractValue(data, "SmallV:");
+
+    int largeML = extractValue(data, "LargeML:");
+    int mediumML = extractValue(data, "MediumML:");
+    int smallML = extractValue(data, "SmallML:");
 
     sizes_value[0] = largeValue;
     sizes_value[1] = mediumValue;
     sizes_value[2] = smallValue;
+
+    ml[0] = largeML;
+    ml[1] = mediumML;
+    ml[2] = smallML;    
 
     Serial.println("Sizes Values Updated!");
 }
